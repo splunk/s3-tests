@@ -228,6 +228,7 @@ def test_object_create_bad_md5_empty():
 @attr(operation='create w/non-graphics in MD5')
 @attr(assertion='fails 403')
 @attr('fails_strict_rfc2616')
+@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_md5_unreadable():
     key = _setup_bad_object({'Content-MD5': '\x07'})
@@ -258,6 +259,7 @@ def test_object_create_bad_md5_none():
 @attr(assertion='garbage, but S3 succeeds!')
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
+@attr('skip_for_splunk')
 def test_object_create_bad_expect_mismatch():
     key = _setup_bad_object({'Expect': 200})
     key.set_contents_from_string('bar')
@@ -270,6 +272,7 @@ def test_object_create_bad_expect_mismatch():
 @attr(method='put')
 @attr(operation='create w/empty expect')
 @attr(assertion='succeeds ... should it?')
+@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_expect_empty():
     key = _setup_bad_object({'Expect': ''})
@@ -296,6 +299,7 @@ def test_object_create_bad_expect_none():
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
 @attr('fails_strict_rfc2616')
+@attr('skip_for_splunk')
 def test_object_create_bad_expect_unreadable():
     key = _setup_bad_object({'Expect': '\x07'})
     key.set_contents_from_string('bar')
@@ -451,6 +455,7 @@ def test_object_create_bad_contenttype_unreadable():
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
 @attr('fails_strict_rfc2616')
+@attr('skip_for_splunk')
 def test_object_create_bad_authorization_unreadable():
     key = _setup_bad_object({'Authorization': '\x07'})
 
@@ -566,6 +571,7 @@ def test_bucket_put_bad_canned_acl():
 @attr(assertion='garbage, but S3 succeeds!')
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
+@attr('skip_for_splunk')
 def test_bucket_create_bad_expect_mismatch():
     _add_custom_headers({'Expect':200})
     bucket = get_new_bucket()
@@ -578,6 +584,7 @@ def test_bucket_create_bad_expect_mismatch():
 @attr(method='put')
 @attr(operation='create w/expect empty')
 @attr(assertion='garbage, but S3 succeeds!')
+@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_bucket_create_bad_expect_empty():
     _add_custom_headers({'Expect': ''})
@@ -593,6 +600,7 @@ def test_bucket_create_bad_expect_empty():
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
 @attr('fails_strict_rfc2616')
+@attr('skip_for_splunk')
 def test_bucket_create_bad_expect_unreadable():
     _add_custom_headers({'Expect': '\x07'})
     bucket = get_new_bucket()
@@ -619,6 +627,7 @@ def _create_new_connection():
 @attr(assertion='fails 400')
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
+@attr('skip_for_splunk')
 def test_bucket_create_bad_contentlength_empty():
     conn = _create_new_connection()
     _add_custom_headers({'Content-Length': ''})
@@ -678,6 +687,7 @@ def test_bucket_create_bad_contentlength_unreadable():
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
 @attr('fails_strict_rfc2616')
+@attr('skip_for_splunk')
 def test_bucket_create_bad_authorization_unreadable():
     _add_custom_headers({'Authorization': '\x07'})
     e = assert_raises(boto.exception.S3ResponseError, get_new_bucket)
@@ -799,6 +809,7 @@ def test_object_create_bad_ua_empty_aws2():
 @attr(operation='create w/non-graphic user agent')
 @attr(assertion='succeeds')
 @attr('fails_strict_rfc2616')
+@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_ua_unreadable_aws2():
     check_aws2_support()
@@ -839,6 +850,7 @@ def test_object_create_bad_date_invalid_aws2():
 @attr(method='put')
 @attr(operation='create w/empty date')
 @attr(assertion='fails 403')
+@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_date_empty_aws2():
     check_aws2_support()
@@ -855,6 +867,7 @@ def test_object_create_bad_date_empty_aws2():
 @attr(operation='create w/non-graphic date')
 @attr(assertion='fails 403')
 @attr('fails_strict_rfc2616')
+@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_date_unreadable_aws2():
     check_aws2_support()
@@ -871,6 +884,7 @@ def test_object_create_bad_date_unreadable_aws2():
 @attr(method='put')
 @attr(operation='create w/no date')
 @attr(assertion='fails 403')
+@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_date_none_aws2():
     check_aws2_support()
@@ -886,6 +900,7 @@ def test_object_create_bad_date_none_aws2():
 @attr(method='put')
 @attr(operation='create w/date in past')
 @attr(assertion='fails 403')
+@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_date_before_today_aws2():
     check_aws2_support()
@@ -901,6 +916,7 @@ def test_object_create_bad_date_before_today_aws2():
 @attr(method='put')
 @attr(operation='create w/date in future')
 @attr(assertion='fails 403')
+@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_date_after_today_aws2():
     check_aws2_support()
@@ -976,6 +992,7 @@ def test_bucket_create_bad_ua_empty_aws2():
 @attr(operation='create w/non-graphic user agent')
 @attr(assertion='succeeds')
 @attr('fails_strict_rfc2616')
+@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_bucket_create_bad_ua_unreadable_aws2():
     check_aws2_support()
@@ -1207,6 +1224,7 @@ def test_object_create_bad_ua_empty_aws4():
 @attr(operation='create w/non-graphic user agent')
 @attr(assertion='fails 403')
 @attr('fails_strict_rfc2616')
+@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_ua_unreadable_aws4():
     check_aws4_support()
@@ -1792,3 +1810,4 @@ def test_bucket_create_bad_amz_date_before_epoch_aws4():
     eq(e.status, 403)
     eq(e.reason, 'Forbidden')
     assert e.error_code in ('AccessDenied', 'SignatureDoesNotMatch')
+
