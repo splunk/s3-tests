@@ -1224,7 +1224,6 @@ def test_object_create_bad_ua_empty_aws4():
 @attr(operation='create w/non-graphic user agent')
 @attr(assertion='fails 403')
 @attr('fails_strict_rfc2616')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_ua_unreadable_aws4():
     check_aws4_support()
