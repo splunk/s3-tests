@@ -1,0 +1,36 @@
+pipeline {
+  agent {
+    label 'main'
+  }
+  options {
+    timeout(time: 30, unit: 'MINUTES')
+  }
+  stages {
+    stage('Build image') {
+      steps {
+        sh 'make build-image'
+      }
+    }
+    stage('Start dependencies') {
+      steps {
+        sh 'make ci-network-create'
+        sh 'make ci-dependencies-start'
+      }
+    }
+    stage('Run against Gateway-MT') {
+      steps {
+        sh 'make ci-image-run'
+      }
+    }
+  }
+  post {
+    always {
+      timeout(time: 1, unit: 'MINUTES') {
+        retry(3) {
+          sh 'make ci-purge'
+          deleteDir()
+        }
+      }
+    }
+  }
+}
