@@ -332,12 +332,30 @@ def setup():
         targets[name] = RegionsConn()
 
         for (k, conf) in regions.iteritems():
+            access_key = cfg.get(section, 'access_key')
+            secret_key = cfg.get(section, 'secret_key')
+            is_secure = conf.is_secure
+            endpoint = conf.host
+            port = conf.port
+
+            # known environment variables for AWS override config.
+            # todo: allow for different environment variables for alternate
+            # connections, e.g. the alt credentials for acl tests.
+            if 'AWS_ACCESS_KEY_ID' in os.environ:
+                access_key = os.environ['AWS_ACCESS_KEY_ID']
+            if 'AWS_SECRET_ACCESS_KEY' in os.environ:
+                secret_key = os.environ['AWS_SECRET_ACCESS_KEY']
+            if 'SECURE' in os.environ:
+                is_secure = True if os.environ['SECURE'] == "1" else False
+            if 'ENDPOINT' in os.environ:
+                endpoint, port = parse_hostport(os.environ['ENDPOINT'])
+
             conn = boto.s3.connection.S3Connection(
-                aws_access_key_id=cfg.get(section, 'access_key'),
-                aws_secret_access_key=cfg.get(section, 'secret_key'),
-                is_secure=conf.is_secure,
-                port=conf.port,
-                host=conf.host,
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key,
+                is_secure=is_secure,
+                port=port,
+                host=endpoint,
                 # TODO test vhost calling format
                 calling_format=conf.calling_format,
                 )
@@ -354,7 +372,6 @@ def setup():
                 targets[name].set_default(temp_targetConn)
 
         s3[name] = targets[name].default.connection
-
     # WARNING! we actively delete all buckets we see with the prefix
     # we've chosen! Choose your prefix with care, and don't reuse
     # credentials!
@@ -364,6 +381,15 @@ def setup():
     # really fail.
     nuke_prefixed_buckets(prefix=prefix)
 
+def parse_hostport(s):
+    out = s.rsplit(":", 1)
+    try:
+        out[1] = int(out[1])
+    except (IndexError, ValueError):
+        # couldn't parse the last component as a port, so let's
+        # assume there isn't a port.
+        out = (s, None)
+    return out
 
 def teardown():
     # remove our buckets here also, to avoid littering
