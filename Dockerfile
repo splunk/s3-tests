@@ -17,4 +17,4 @@ RUN python setup.py develop
 ENV S3TEST_CONF=/s3-tests/splunk.conf
 
 ENTRYPOINT ["nosetests"]
-CMD ["-a", "!skip_for_splunk"]
+CMD ["-a", "!skip_for_splunk,!skip_for_storj"]

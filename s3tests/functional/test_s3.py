@@ -185,6 +185,7 @@ def _get_alt_connection():
 @attr(method='get')
 @attr(operation='list all keys')
 @attr(assertion='pagination w/max_keys=2, no marker')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -213,6 +214,7 @@ def test_bucket_list_many():
 @attr(method='get')
 @attr(operation='list')
 @attr(assertion='prefixes in multi-component object names')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -269,6 +271,7 @@ def validate_bucket_list(bucket, prefix, delimiter, marker, max_keys,
 @attr(method='get')
 @attr(operation='list')
 @attr(assertion='prefixes in multi-component object names')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 def test_bucket_list_delimiter_prefix():
     bucket = _create_keys(keys=['asdf', 'boo/bar', 'boo/baz/xyzzy', 'cquux/thud', 'cquux/bla'])
 
@@ -330,6 +333,7 @@ def test_bucket_list_delimiter_alt():
 @attr(method='get')
 @attr(operation='list')
 @attr(assertion='prefixes starting with underscore')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -408,6 +412,7 @@ def test_bucket_list_delimiter_whitespace():
 @attr(method='get')
 @attr(operation='list')
 @attr(assertion='dot delimiter characters')
+@attr('skip_for_storj') # todo: invalid characters error (dot in request uri rejected)
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -454,6 +459,7 @@ def test_bucket_list_delimiter_unreadable():
 @attr(method='get')
 @attr(operation='list')
 @attr(assertion='empty delimiter can be specified')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -476,6 +482,7 @@ def test_bucket_list_delimiter_empty():
 @attr(method='get')
 @attr(operation='list')
 @attr(assertion='unspecified delimiter defaults to none')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -497,6 +504,7 @@ def test_bucket_list_delimiter_none():
 @attr(method='get')
 @attr(operation='list')
 @attr(assertion='unused delimiter is not found')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -518,6 +526,7 @@ def test_bucket_list_delimiter_not_exist():
 @attr(method='get')
 @attr(operation='list under prefix')
 @attr(assertion='returns only objects under prefix')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -559,6 +568,7 @@ def test_bucket_list_prefix_alt():
 @attr(method='get')
 @attr(operation='list under prefix')
 @attr(assertion='empty prefix returns everything')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -580,6 +590,7 @@ def test_bucket_list_prefix_empty():
 @attr(method='get')
 @attr(operation='list under prefix')
 @attr(assertion='unspecified prefix returns everything')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -741,6 +752,7 @@ def test_bucket_list_prefix_delimiter_prefix_delimiter_not_exist():
 @attr(method='get')
 @attr(operation='list all keys')
 @attr(assertion='pagination w/max_keys=1, marker')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -765,6 +777,7 @@ def test_bucket_list_maxkeys_one():
 @attr(method='get')
 @attr(operation='list all keys')
 @attr(assertion='pagination w/max_keys=0')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -781,6 +794,7 @@ def test_bucket_list_maxkeys_zero():
 @attr(method='get')
 @attr(operation='list all keys')
 @attr(assertion='pagination w/o max_keys')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -856,6 +870,7 @@ def test_bucket_list_marker_none():
 @attr(method='get')
 @attr(operation='list all keys')
 @attr(assertion='no pagination, empty marker')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -875,6 +890,7 @@ def test_bucket_list_marker_empty():
 @attr(method='get')
 @attr(operation='list all keys')
 @attr(assertion='non-printing marker')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -894,6 +910,7 @@ def test_bucket_list_marker_unreadable():
 @attr(method='get')
 @attr(operation='list all keys')
 @attr(assertion='marker not-in-list')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -911,6 +928,7 @@ def test_bucket_list_marker_not_in_list():
 @attr(method='get')
 @attr(operation='list all keys')
 @attr(assertion='marker after list')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -928,6 +946,7 @@ def test_bucket_list_marker_after_list():
 @attr(method='get')
 @attr(operation='list all keys')
 @attr(assertion='marker before list')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -969,6 +988,7 @@ def _compare_dates(iso_datetime, http_datetime):
 @attr(method='head')
 @attr(operation='compare w/bucket list')
 @attr(assertion='return same metadata')
+@attr('skip_for_storj') # todo: no support for acl
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -1011,6 +1031,7 @@ def test_bucket_list_return_data():
 @attr(method='head')
 @attr(operation='compare w/bucket list when bucket versioning is configured')
 @attr(assertion='return same metadata')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -1056,6 +1077,7 @@ def test_bucket_list_return_data_versioning():
 @attr(method='get')
 @attr(operation='list keys after marker when bucket versioning is configured')
 @attr(assertion='marker list on versioning bucket')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -4179,6 +4201,9 @@ def test_bucket_get_location():
 @attr(method='put')
 @attr(operation='re-create by non-owner')
 @attr(assertion='fails 409')
+# would not work for Storj because buckets are scoped to access grants
+# whereas buckets are globally unique in AWS S3.
+@attr('skip_for_storj')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -4197,6 +4222,9 @@ def test_bucket_create_exists_nonowner():
 @attr(method='del')
 @attr(operation='delete by non-owner')
 @attr(assertion='fails')
+# would not work for Storj because buckets are scoped to access grants
+# whereas buckets are globally unique in AWS S3.
+@attr('skip_for_storj')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -6547,6 +6575,7 @@ def test_multipart_copy_invalid_range():
 @attr(method='put')
 @attr(operation='check multipart copies with single small part')
 @attr('skip_for_splunk')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -6579,6 +6608,7 @@ def _check_content_using_range(k, data, step):
 @attr(method='put')
 @attr(operation='complete multi-part upload')
 @attr(assertion='successful')
+@attr('skip_for_storj') # todo: https://github.com/storj/gateway-mt/issues/39
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -6609,6 +6639,7 @@ def test_multipart_upload():
 @attr(resource='object')
 @attr(method='put')
 @attr(operation='check multipart copies with single small part')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -6688,6 +6719,7 @@ def _check_upload_multipart_resend(bucket, key, objlen, resend_parts):
 @attr(method='put')
 @attr(operation='complete multi-part upload')
 @attr(assertion='successful')
+@attr('skip_for_storj') # todo: https://github.com/storj/gateway-mt/issues/39
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -6769,6 +6801,7 @@ def test_multipart_copy_multiple_sizes():
 @attr(method='put')
 @attr(operation='check failure on multiple multi-part upload with size too small')
 @attr(assertion='fails 400')
+@attr('skip_for_storj') # todo: https://github.com/storj/gateway-mt/issues/105
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -6879,6 +6912,7 @@ def test_abort_multipart_upload_not_found():
 @attr(method='put')
 @attr(operation='concurrent multi-part uploads')
 @attr(assertion='successful')
+@attr('skip_for_storj') # todo: needs lexicographically ordered objects
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -6911,6 +6945,7 @@ def test_list_multipart_upload():
 @attr(resource='object')
 @attr(method='put')
 @attr(operation='multi-part upload with missing part')
+@attr('skip_for_storj') # todo: does not raise an error
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -6930,6 +6965,7 @@ def test_multipart_upload_missing_part():
 @attr(resource='object')
 @attr(method='put')
 @attr(operation='multi-part upload with incorrect ETag')
+@attr('skip_for_storj') # todo: does not raise an error
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -7014,6 +7050,7 @@ def _test_bucket_acls_changes_persistent(bucket):
 @attr(method='put')
 @attr(operation='acl set')
 @attr(assertion='all permissions are persistent')
+@attr('skip_for_storj') # todo: no support for acl
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8011,6 +8048,7 @@ def check_configure_versioning_retry(bucket, status, expected_string):
 @attr(operation='create versioned bucket')
 @attr(assertion='can create and suspend bucket versioning')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8155,6 +8193,7 @@ def _do_test_create_remove_versions_and_head(bucket, objname, num_versions, num_
 @attr(operation='create and remove versioned object')
 @attr(assertion='can create access and remove appropriate versions')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8176,6 +8215,7 @@ def test_versioning_obj_create_read_remove():
 @attr(operation='create and remove versioned object and head')
 @attr(assertion='can create access and remove appropriate versions')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8231,6 +8271,7 @@ def overwrite_suspended_versioning_obj(bucket, objname, k, c, content):
 @attr(operation='create object, then switch to versioning')
 @attr(assertion='behaves correctly')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8267,6 +8308,7 @@ def test_versioning_obj_plain_null_version_removal():
 @attr(operation='create object, then switch to versioning')
 @attr(assertion='behaves correctly')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8318,6 +8360,7 @@ def test_versioning_obj_plain_null_version_overwrite():
 @attr(operation='create object, then switch to versioning')
 @attr(assertion='behaves correctly')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8367,6 +8410,7 @@ def test_versioning_obj_plain_null_version_overwrite_suspended():
 @attr(operation='suspend versioned bucket')
 @attr(assertion='suspended versioning behaves correctly')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8408,6 +8452,7 @@ def test_versioning_obj_suspend_versions():
 @attr(operation='suspend versioned bucket')
 @attr(assertion='suspended versioning behaves correctly')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8446,6 +8491,7 @@ def test_versioning_obj_suspend_versions_simple():
 @attr(operation='create and remove versions')
 @attr(assertion='everything works')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8472,6 +8518,7 @@ def test_versioning_obj_create_versions_remove_all():
 @attr(operation='create and remove versions')
 @attr(assertion='everything works')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8499,6 +8546,7 @@ def test_versioning_obj_create_versions_remove_special_names():
 @attr(operation='create and test multipart object')
 @attr(assertion='everything works')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8535,6 +8583,7 @@ def test_versioning_obj_create_overwrite_multipart():
 @attr(operation='list versioned objects')
 @attr(assertion='everything works')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8577,6 +8626,7 @@ def test_versioning_obj_list_marker():
 @attr(operation='create and test versioned object copying')
 @attr(assertion='everything works')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8622,6 +8672,7 @@ def _count_bucket_versioned_objs(bucket):
 @attr(operation='delete multiple versions')
 @attr(assertion='deletes multiple versions of an object with a single call')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8662,6 +8713,7 @@ def test_versioning_multi_object_delete():
 @attr(operation='delete multiple versions')
 @attr(assertion='deletes multiple versions of an object and delete marker with a single call')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8712,6 +8764,7 @@ def test_versioning_multi_object_delete_with_marker():
 @attr(operation='multi delete create marker')
 @attr(assertion='returns correct marker version id')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8748,6 +8801,7 @@ def test_versioning_multi_object_delete_with_marker_create():
 @attr(operation='change acl on an object version changes specific version')
 @attr(assertion='works')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8823,6 +8877,7 @@ def test_versioned_object_acl():
 @attr(operation='change acl on an object with no version specified changes latest version')
 @attr(assertion='works')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8922,6 +8977,7 @@ def _do_wait_completion(t):
 @attr(operation='concurrent creation of objects, concurrent removal')
 @attr(assertion='works')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8953,6 +9009,7 @@ def test_versioned_concurrent_object_create_concurrent_remove():
 @attr(operation='concurrent creation and removal of objects')
 @attr(assertion='works')
 @attr('versioning')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -11358,6 +11415,7 @@ def test_delete_tags_obj_public():
 @attr(operation='test whether a correct version-id returned')
 @attr(assertion='version-id is same as bucket list')
 @attr('skip_versioning_not_supported')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -11394,6 +11452,7 @@ def test_versioning_bucket_atomic_upload_return_version_id():
 @attr(operation='test whether a correct version-id returned')
 @attr(assertion='version-id is same as bucket list')
 @attr('skip_versioning_not_supported')
+@attr('skip_for_storj') # todo: no support for versioning
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
