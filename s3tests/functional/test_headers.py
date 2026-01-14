@@ -373,7 +373,6 @@ def test_object_create_bad_contentlength_unreadable():
 @attr(assertion='fails 400')
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
-@attr('skip_for_splunk')
 def test_object_create_bad_contentlength_mismatch_above():
     content = 'bar'
     length = len(content) + 1
@@ -432,7 +431,6 @@ def test_object_create_bad_contenttype_none():
 @nose.with_setup(teardown=_clear_custom_headers)
 @attr('fails_on_rgw')
 @attr('fails_strict_rfc2616')
-@attr('skip_for_splunk')
 def test_object_create_bad_contenttype_unreadable():
     key = _setup_bad_object({'Content-Type': '\x08'})
 
@@ -479,7 +477,6 @@ def test_object_create_bad_authorization_empty():
 @attr(method='put')
 @attr(operation='create w/date and x-amz-date')
 @attr(assertion='succeeds')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_date_and_amz_date():
     date = formatdate(usegmt=True)
@@ -531,7 +528,6 @@ def test_bucket_create_contentlength_none():
 @attr(operation='set w/no content length')
 @attr(assertion='succeeds')
 @nose.with_setup(teardown=_clear_custom_headers)
-@attr('skip_for_splunk')
 def test_object_acl_create_contentlength_none():
     bucket = get_new_bucket()
     key = bucket.new_key('foo')
@@ -546,7 +542,6 @@ def test_object_acl_create_contentlength_none():
 @attr(method='acls')
 @attr(operation='set w/invalid permission')
 @attr(assertion='fails 400')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_bucket_put_bad_canned_acl():
     bucket = get_new_bucket()
@@ -771,7 +766,6 @@ def test_object_create_bad_authorization_incorrect_aws2():
 @attr(method='put')
 @attr(operation='create w/invalid authorization')
 @attr(assertion='fails 400')
-@attr('skip_for_splunk')
 def test_object_create_bad_authorization_invalid_aws2():
     check_aws2_support()
     key = _setup_bad_object({'Authorization': 'AWS HAHAHA'})
@@ -823,7 +817,6 @@ def test_object_create_bad_ua_none_aws2():
 @attr(method='put')
 @attr(operation='create w/invalid date')
 @attr(assertion='fails 403')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_date_invalid_aws2():
     check_aws2_support()
@@ -916,7 +909,6 @@ def test_object_create_bad_date_after_today_aws2():
 @attr(method='put')
 @attr(operation='create w/date before epoch')
 @attr(assertion='fails 403')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_date_before_epoch_aws2():
     check_aws2_support()
@@ -932,7 +924,6 @@ def test_object_create_bad_date_before_epoch_aws2():
 @attr(method='put')
 @attr(operation='create w/date after 9999')
 @attr(assertion='fails 403')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_object_create_bad_date_after_end_aws2():
     check_aws2_support()
@@ -1015,7 +1006,6 @@ def test_bucket_create_bad_date_invalid_aws2():
 @attr(method='put')
 @attr(operation='create w/empty date')
 @attr(assertion='fails 403')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_bucket_create_bad_date_empty_aws2():
     check_aws2_support()
@@ -1032,7 +1022,6 @@ def test_bucket_create_bad_date_empty_aws2():
 @attr(operation='create w/non-graphic date')
 @attr(assertion='fails 403')
 @attr('fails_strict_rfc2616')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_bucket_create_bad_date_unreadable_aws2():
     check_aws2_support()
@@ -1048,7 +1037,6 @@ def test_bucket_create_bad_date_unreadable_aws2():
 @attr(method='put')
 @attr(operation='create w/no date')
 @attr(assertion='fails 403')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_bucket_create_bad_date_none_aws2():
     check_aws2_support()
@@ -1064,7 +1052,6 @@ def test_bucket_create_bad_date_none_aws2():
 @attr(method='put')
 @attr(operation='create w/date in past')
 @attr(assertion='fails 403')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_bucket_create_bad_date_before_today_aws2():
     check_aws2_support()
@@ -1080,7 +1067,6 @@ def test_bucket_create_bad_date_before_today_aws2():
 @attr(method='put')
 @attr(operation='create w/date in future')
 @attr(assertion='fails 403')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_bucket_create_bad_date_after_today_aws2():
     check_aws2_support()
@@ -1096,7 +1082,6 @@ def test_bucket_create_bad_date_after_today_aws2():
 @attr(method='put')
 @attr(operation='create w/date before epoch')
 @attr(assertion='fails 403')
-@attr('skip_for_splunk')
 @nose.with_setup(teardown=_clear_custom_headers)
 def test_bucket_create_bad_date_before_epoch_aws2():
     check_aws2_support()
