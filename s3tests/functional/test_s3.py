@@ -1244,7 +1244,6 @@ def test_bucket_concurrent_set_canned_acl():
 @attr(method='put')
 @attr(operation='non-existant bucket')
 @attr(assertion='fails 404')
-@attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -3362,7 +3361,6 @@ def test_object_raw_get_bucket_gone():
 @attr(method='delete')
 @attr(operation='deleted object and bucket')
 @attr(assertion='fails 404')
-@attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -3804,7 +3802,6 @@ def test_bucket_create_naming_bad_short_empty():
 @attr(method='put')
 @attr(operation='short (one character) name')
 @attr(assertion='fails 400')
-@attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -3817,7 +3814,6 @@ def test_bucket_create_naming_bad_short_one():
 @attr(method='put')
 @attr(operation='short (two character) name')
 @attr(assertion='fails 400')
-@attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -8712,7 +8708,6 @@ def test_versioning_multi_object_delete_with_marker():
 @attr(operation='multi delete create marker')
 @attr(assertion='returns correct marker version id')
 @attr('versioning')
-@attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -10997,7 +10992,6 @@ def test_get_obj_head_tagging():
 @attr(operation='Test Put max allowed tags')
 @attr(assertion='success')
 @attr('tagging')
-@attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -11037,7 +11031,6 @@ def test_put_excess_tags():
 @attr(operation='Test Put max allowed k-v size')
 @attr(assertion='success')
 @attr('tagging')
-@attr('skip_for_splunk')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -11357,7 +11350,6 @@ def test_delete_tags_obj_public():
 @attr(method='put')
 @attr(operation='test whether a correct version-id returned')
 @attr(assertion='version-id is same as bucket list')
-@attr('skip_versioning_not_supported')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -11393,7 +11385,6 @@ def test_versioning_bucket_atomic_upload_return_version_id():
 @attr(method='put')
 @attr(operation='test whether a correct version-id returned')
 @attr(assertion='version-id is same as bucket list')
-@attr('skip_versioning_not_supported')
 @nose.with_setup(
     setup=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
     teardown=lambda: nuke_prefixed_buckets(prefix=get_prefix()),
@@ -11966,4 +11957,3 @@ def test_bucket_policy_get_obj_acl_existing_tag():
 
     res = new_conn.make_request("GET",bucket.name, 'invalidtag', query_args='tagging')
     eq(res.status, 403)
-

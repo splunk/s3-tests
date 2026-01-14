@@ -140,9 +140,6 @@ Follow these steps:
 
   `S3TEST_CONF=aws.conf ./virtualenv/bin/nosetests -a '!fails_on_aws'`
 
-   **Note:** By default, the test will run version based tests also, in order to skip them add label
-   `-a '!skip_versioning_not_supported'`
-
 Test Result
 -----------
 * **Success Scenario**
