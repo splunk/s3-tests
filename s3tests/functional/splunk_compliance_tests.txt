@@ -1,0 +1,49 @@
+test_bucket_list_empty
+test_bucket_list_many
+test_bucket_listv2_many
+test_bucket_list_prefix_basic
+test_bucket_listv2_prefix_basic
+test_list_buckets_paginated
+
+# Head / Metadata
+test_object_head_zero_bytes
+test_bucket_head
+test_bucket_head_extended
+
+# Get/Download
+test_get_object_ifmatch_good
+test_get_object_ifmatch_failed
+test_get_object_ifnonematch_good
+test_get_object_ifnonematch_failed
+test_get_object_ifmodifiedsince_good
+
+# Put/Upload
+test_object_put_authenticated
+test_object_anon_put
+test_post_object_upload_larger_than_chunk
+
+# Multipart
+test_multipart_upload
+test_multipart_upload_multiple_sizes
+test_multipart_get_part
+test_abort_multipart_upload
+
+# Delete / Batch remove
+test_multi_object_delete
+test_multi_objectv2_delete
+test_multi_object_delete_key_limit
+
+# Lifecycle & Storage class
+test_lifecycle_set
+test_lifecycle_get
+
+# Encryption
+test_multipart_sse_c_get_part
+
+# Transactional (representative)
+test_object_write_read_update_read_delete
+
+# Compression / Content-Encoding
+test_object_content_encoding_aws_chunked
+
+
