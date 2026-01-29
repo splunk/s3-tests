@@ -1,5 +1,5 @@
 ========================
- S3 compatibility tests
+ Splunk S3 compatibility tests
 ========================
 
 This is a set of unofficial Amazon AWS S3 compatibility
@@ -24,7 +24,10 @@ Once you have that file copied and edited, you can run the tests the same
 way upstream invokes them with a Splunk-specific configuration named
 ``splunk.conf``::
 
-  # run using pytest and the upstream-style marker filter
+  # run using the repository helper
+ ./run_core_s3_tests.sh
+
+  # or run pytest directly (when running pytest directly you must apply the upstream skip filter)
   S3TEST_CONF=splunk.conf pytest -q s3tests/functional -m "not skip_for_splunk"
 
 If you prefer to run tests directly with ``pytest`` (faster iteration,
@@ -33,13 +36,13 @@ your active Python environment (for example, via virtualenv or pip).
 
 Examples using ``pytest`` with `splunk.conf`:
 
-    # run the full functional suite, excluding upstream skip list
+    # run the full functional suite (pytest direct; apply upstream skip list)
     S3TEST_CONF=splunk.conf pytest -q s3tests/functional -m "not skip_for_splunk"
 
-    # run a single file
+    # run a single file (pytest direct; apply upstream skip list)
     S3TEST_CONF=splunk.conf pytest -q s3tests/functional/test_headers.py -m "not skip_for_splunk"
 
-    # run a single test function
+    # run a single test function (pytest direct; apply upstream skip list)
     S3TEST_CONF=splunk.conf pytest -q s3tests/functional/test_headers.py::test_bucket_create_bad_contentlength_empty -k "not skip_for_splunk"
 
 Notes:
@@ -78,9 +81,17 @@ These commands assume you are in the repository root.
 
   S3TEST_CONF=splunk.conf pytest -q s3tests/functional -m splunk_compliance_test
 
-4. Run the full suite (excluding versioning and skipped tests):
+4. Run the s3-core suite (excluding versioning) — optional full run:
 
-  S3TEST_CONF=splunk.conf pytest -q s3tests/functional/test_s3.py -m "not versioning and not skip_for_splunk"
+  # If you'd like to run a curated, quick focused set first see the "Running the core S3 tests"
+  # section below (it uses `run_core_s3_tests.sh`). If those core checks pass, run the full s3-core
+  # suite (excluding versioning) as the final verification:
+
+5. Run the full test suite excluding versioning and tests that should be skip_for_splunk:
+
+  # This runs the full functional tests but excludes 'versioning' tests and tests that should not be run for Splunk.
+    Use this when you want a comprehensive compatibility check that includes tests the wrapper normally filters out.
+  S3TEST_CONF=splunk.conf pytest -q s3tests/functional -m "not versioning and not skip_for_splunk"
 
 Optional: run a single file or single test (still using the compliance marker)::
 
@@ -195,90 +206,59 @@ to match your test endpoint and credentials.
   ; - Fill `tenant` for multi-tenant RGW testing.
 
 
-Some tests have attributes set based on their current reliability and
-things like AWS not enforcing their spec stricly. You can filter tests
-based on their attributes::
+Running the core S3 tests (run_core_s3_tests.sh)
+------------------------------------------------------
 
-  S3TEST_CONF=aws.conf pytest -q s3tests/functional -m 'not fails_on_aws'
+The repository ships a helper script `run_core_s3_tests.sh` that runs a curated subset of the
+upstream functional tests. It focuses on core object-storage semantics and intentionally skips
+IAM, ACL/policy, advanced CORS/presign, checksum, logging and other backend-specific tests that
+are frequently incompatible with some remote storages.
 
-Most of the tests have both Boto3 and Boto2 versions. Tests written in
-Boto2 are in the ``s3tests`` directory. Tests written in Boto3 are
-located in the ``s3test_boto3`` directory.
+Quick setup
 
-You can run only the boto3 tests with::
+1. Create and activate a Python virtualenv and install dependencies::
 
-  S3TEST_CONF=your.conf pytest -q s3tests/functional
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -U pip
+  pip install -r requirements.txt pytest
 
-========================
- STS compatibility tests
-========================
+2. Copy the sample config and edit required sections (at minimum fill `[s3 main]` and `[s3 alt]`)::
 
-This section contains some basic tests for the AssumeRole, GetSessionToken and AssumeRoleWithWebIdentity API's. The test file is located under ``s3tests/functional``.
+  cp s3tests.conf.SAMPLE splunk.conf
+  # edit splunk.conf: set host/port/endpoint and credentials
 
-To run the STS tests, the vstart cluster should be started with the following parameter (in addition to any parameters already used with it)::
+Run the focused test launcher
 
-        vstart.sh -o rgw_sts_key=abcdefghijklmnop -o rgw_s3_auth_use_sts=true
+  source .venv/bin/activate
+  ./run_core_s3_tests.sh
 
-Note that the ``rgw_sts_key`` can be set to anything that is 128 bits in length.
-After the cluster is up the following command should be executed::
+Configuration and outputs
 
-      radosgw-admin caps add --tenant=testx --uid="9876543210abcdef0123456789abcdef0123456789abcdef0123456789abcdef" --caps="roles=*"
+- Environment variables you can set before running:
+  - `S3TEST_CONF` – path to config file (default: `splunk.conf`).
+  - `PYTEST_TARGET` – pytest target path (default: `s3tests/functional`).
+  - `REPORT_DIR` – directory where `junit-*.xml` and `pytest-*.log` are written (default: `reports`).
+- Artifacts produced in `reports/`:
+  - `junit-<timestamp>.xml` — JUnit-style XML useful for CI dashboards.
+  - `pytest-<timestamp>.log` — full pytest output log (useful for triage and failures).
+- The script exits with pytest's exit code so CI will flag failures.
 
-You can run only the sts tests (all the three API's) with::
+What is intentionally excluded
+------------------------------
+The launcher deselects tests that exercise features not commonly implemented by simple S3-like backends:
 
-  S3TEST_CONF=your.conf pytest -q s3tests/functional/test_sts.py
+- IAM/STS and tenant management
+- Public ACL / BlockPublicAcls enforcement and some ACL permutations
+- Advanced CORS / browser presigned OPTIONS handshake tests
+- Checksum/GetObjectAttributes and other object-attribute extensions
+- Bucket logging and other vendor-specific extensions
 
-You can filter tests based on the attributes. There is a attribute named ``test_of_sts`` to run AssumeRole and GetSessionToken tests and ``webidentity_test`` to run the AssumeRoleWithWebIdentity tests. If you want to execute only ``test_of_sts`` tests you can apply that filter as below::
-
-  S3TEST_CONF=your.conf pytest -q -m test_of_sts s3tests/functional/test_sts.py
-
-For running ``webidentity_test`` you'll need have Keycloak running.
-
-In order to run any STS test you'll need to add "iam" section to the config file. For further reference on how your config file should look check ``s3tests.conf.SAMPLE``.
-
-========================
- IAM policy tests
-========================
-
-This is a set of IAM policy tests.
-This section covers tests for user policies such as Put, Get, List, Delete, user policies with s3 actions, conflicting user policies etc
-These tests uses Boto3 libraries. Tests are written in the ``s3test_boto3`` directory.
-
-These iam policy tests uses two users with profile name "iam" and "s3 alt" as mentioned in s3tests.conf.SAMPLE.
-If Ceph cluster is started with vstart, then above two users will get created as part of vstart with same access key, secrete key etc as mentioned in s3tests.conf.SAMPLE.
-Out of those two users, "iam" user is with capabilities --caps=user-policy=* and "s3 alt" user is without capabilities.
-Adding above capabilities to "iam" user is also taken care by vstart (If Ceph cluster is started with vstart).
-
-To run these tests, create configuration file with section "iam" and "s3 alt" refer s3tests.conf.SAMPLE.
-
-Once you have that configuration file copied and edited, you can run all the tests with::
-
-  S3TEST_CONF=your.conf pytest -q s3tests/functional/test_iam.py
-
-You can also specify specific test to run::
-
-  S3TEST_CONF=your.conf pytest -q s3tests/functional/test_iam.py::test_put_user_policy
-
-Some tests have attributes set such as "fails_on_rgw".
-You can filter tests based on their attributes::
-
-  S3TEST_CONF=your.conf pytest -q s3tests/functional/test_iam.py -m 'not fails_on_rgw'
-
-========================
- Bucket logging tests
-========================
-
-Ceph has extensions for the bucket logging S3 API. For the tests to cover these extensions, the following file: `examples/rgw/boto3/service-2.sdk-extras.json` from the Ceph repo,
-should be copied to the: `~/.aws/models/s3/2006-03-01/` directory on the machine where the tests are run.
-If the file is not present, the tests will still run, but the extension tests will be skipped. In this case, the bucket logging object roll time must be decreased manually from its default of
-300 seconds to 5 seconds::
-
-  vstart.sh -o rgw_bucket_logging_object_roll_time=5
-
-Then the tests can be run with::
-
-  S3TEST_CONF=your.conf pytest -q s3tests/functional -m 'bucket_logging'
-
-To run the only bucket logging tests that do not need extension of rollover time, use::
-
-  S3TEST_CONF=your.conf pytest -q s3tests/functional -m 'bucket_logging and not fails_without_logging_rollover'
+Triage tips when testing against other remote storage providers
+----------------------------------------------------------
+- If tests fail, collect `reports/pytest-<timestamp>.log` and the referenced raw test output. This will
+  contain the request/response bodies for the failing test.
+- See `reports/vendor-failure-mapping.csv` for a mapping of known vendor failures to core
+  operations and recommended short-term test changes (skip/xfail) or long-term fixes.
+- If you need a narrower or broader selection of tests, edit `run_core_s3_tests.sh` to add/remove `--deselect`
+  entries or run pytest directly with the marker filters shown earlier in this README.
