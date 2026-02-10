@@ -156,7 +156,10 @@ main() {
     fi
     
     log_info "Generating charts and HTML report..."
-    if python "$REPORT_SCRIPT" "$SUMMARY_FILE"; then
+    CHARTS_DIR="$LATEST_RESULTS/charts"
+    REPORT_HTML="$LATEST_RESULTS/final_report.html"
+    mkdir -p "$CHARTS_DIR"
+    if python "$REPORT_SCRIPT" --input "$SUMMARY_FILE" --output "$REPORT_HTML" --charts "$CHARTS_DIR" --targets "$TARGET"; then
         log_success "Report generated successfully!"
     else
         log_warning "Report generation completed with warnings (this is OK if there's partial data)"
@@ -167,10 +170,10 @@ main() {
     # Step 5: Display results summary
     print_header "Results Summary"
     
-    # Count successful tests
-    TOTAL_TESTS=$(jq '.tests | length' "$SUMMARY_FILE" 2>/dev/null || echo "0")
-    SUCCESSFUL_TESTS=$(jq '[.tests[] | select(.errors == 0)] | length' "$SUMMARY_FILE" 2>/dev/null || echo "0")
-    FAILED_TESTS=$(jq '[.tests[] | select(.errors > 0)] | length' "$SUMMARY_FILE" 2>/dev/null || echo "0")
+    # Count successful tests (summary.json is a JSON array of run entries)
+    TOTAL_TESTS=$(jq 'length' "$SUMMARY_FILE" 2>/dev/null || echo "0")
+    SUCCESSFUL_TESTS=$(jq '[.[] | select(.errors == 0)] | length' "$SUMMARY_FILE" 2>/dev/null || echo "0")
+    FAILED_TESTS=$(jq '[.[] | select(.errors > 0)] | length' "$SUMMARY_FILE" 2>/dev/null || echo "0")
     
     log_info "Total tests run: $TOTAL_TESTS"
     log_success "Successful tests: $SUCCESSFUL_TESTS"
@@ -180,7 +183,7 @@ main() {
     echo ""
     
     # Find generated files
-    REPORT_HTML="$LATEST_RESULTS/report.html"
+    REPORT_HTML="$LATEST_RESULTS/final_report.html"
     CHARTS_DIR="$LATEST_RESULTS/charts"
     
     if [[ -f "$REPORT_HTML" ]]; then
@@ -198,19 +201,19 @@ main() {
     print_header "Key Performance Metrics"
     
     log_info "PUT Performance:"
-    jq -r '.tests[] | select(.operation == "put") | "  \(.size) @ \(.concurrency) concurrent: \(.throughput_mbps) MB/s (\(.errors) errors)"' "$SUMMARY_FILE" 2>/dev/null || log_warning "No PUT metrics available"
+    jq -r '.[] | select(.operation == "put") | "  \(.object_size) @ \(.concurrency) concurrent: \(.throughput_mbps) MB/s (\(.errors) errors)"' "$SUMMARY_FILE" 2>/dev/null || log_warning "No PUT metrics available"
     
     echo ""
     log_info "GET Performance:"
-    jq -r '.tests[] | select(.operation == "get") | "  \(.size) @ \(.concurrency) concurrent: \(.throughput_mbps) MB/s (\(.errors) errors)"' "$SUMMARY_FILE" 2>/dev/null || log_warning "No GET metrics available"
+    jq -r '.[] | select(.operation == "get") | "  \(.object_size) @ \(.concurrency) concurrent: \(.throughput_mbps) MB/s (\(.errors) errors)"' "$SUMMARY_FILE" 2>/dev/null || log_warning "No GET metrics available"
     
     echo ""
     log_info "DELETE Performance:"
-    jq -r '.tests[] | select(.operation == "delete") | "  \(.size) @ \(.concurrency) concurrent: \(.throughput_mbps) MB/s (\(.errors) errors)"' "$SUMMARY_FILE" 2>/dev/null || log_warning "No DELETE metrics available"
+    jq -r '.[] | select(.operation == "delete") | "  \(.object_size) @ \(.concurrency) concurrent: \(.throughput_mbps) MB/s (\(.errors) errors)"' "$SUMMARY_FILE" 2>/dev/null || log_warning "No DELETE metrics available"
     
     echo ""
     log_info "LIST Performance:"
-    jq -r '.tests[] | select(.operation == "list") | "  \(.size) @ \(.concurrency) concurrent: \(.ops_per_sec) ops/sec (\(.errors) errors)"' "$SUMMARY_FILE" 2>/dev/null || log_warning "No LIST metrics available"
+    jq -r '.[] | select(.operation == "list") | "  \(.object_size) @ \(.concurrency) concurrent: \(.ops_per_sec) ops/sec (\(.errors) errors)"' "$SUMMARY_FILE" 2>/dev/null || log_warning "No LIST metrics available"
     
     echo ""
     

@@ -103,6 +103,17 @@ def load_data(input_file: Path) -> pd.DataFrame:
 
     df['concurrency'] = pd.to_numeric(df['concurrency'], errors='coerce').fillna(1).astype(int)
 
+    # Exclude failed/error entries (e.g. invalid_raw_output) so they don't skew comparison and charts
+    if 'error' in df.columns:
+        df = df[df['error'].isna() | (df['error'] == '')]
+    if 'error_rate' in df.columns:
+        df = df[df['error_rate'].fillna(0) < 1.0]
+    df = df.drop(columns=['error', 'error_msg', 'raw_tail_b64'], errors='ignore')
+    if df.empty:
+        print(f"Error: no valid benchmark rows in {input_file} (all entries had errors).", file=sys.stderr)
+        print("Re-run the benchmark or re-parse raw output with reparse_warp_raw.py.", file=sys.stderr)
+        sys.exit(2)
+
     df['size_bytes'] = df['object_size'].apply(parse_size_to_bytes)
     df = df.sort_values('size_bytes')
     return df

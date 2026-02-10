@@ -17,9 +17,19 @@ perf-tests/
 
 ## 🚀 Available Scripts & Commands
 
-### Convenience Scripts (Recommended)
+### Which script when?
 
-These scripts combine benchmark execution with automatic report generation:
+| Goal | Command | Notes |
+|------|---------|--------|
+| **Compare two targets (e.g. other vs AWS)** | `./warp_s3_benchmark.sh --target aws --target other --compare --report` | Full benchmark for both, then merge and comparison report. This is what you want for "other vs aws" comparison. |
+| **Fix existing results (raw OK, summary had errors)** | `./warp_s3_benchmark.sh --use-latest aws other --compare --report --reparse` | Re-parses `raw/*.json` into `summary.json` before merging, then generates report. Use when raw files are valid but summary had `invalid_raw_output`. |
+| **Quick single-target test** | `./quick_run_and_report.sh aws` | Short duration (10s), one size (1MiB), single target. No comparison. |
+| **Full single-target benchmark** | `./run_and_report.sh aws` | Heavy run (e.g. 750MiB), single target. No comparison. |
+
+- **quick_run_and_report** and **run_and_report** run **one target only** and produce a single-target report.
+- For **comparison** (other vs aws), use **warp_s3_benchmark.sh** with `--target aws --target other --compare --report`.
+
+### Convenience Scripts (Single-target only)
 
 #### Quick Test Suite (~3-5 minutes)
 ```bash
@@ -39,15 +49,12 @@ These scripts combine benchmark execution with automatic report generation:
 # Run comprehensive benchmark + generate report for single target
 ./run_and_report.sh aws
 
-# Run both targets and generate comparison report
-./run_and_report.sh aws other
-
 # Configuration:
-# - Multiple object sizes (4KiB to 128MiB)
-# - Multiple concurrency levels (1 to 128)
+# - Single large size (750MiB) by default
+# - Multiple concurrency levels
 # - 5 operations (PUT, GET, DELETE, LIST, MIXED)
 # - 3 iterations per test
-# - 3 minutes per test (default)
+# - Long duration per test
 ```
 
 ### Core Scripts (Advanced Usage)
@@ -71,6 +78,9 @@ These scripts combine benchmark execution with automatic report generation:
 
 # Use latest existing results for comparison
 ./warp_s3_benchmark.sh --use-latest aws other --compare --report
+
+# Fix summary from raw (when raw JSON is valid but summary had invalid_raw_output)
+./warp_s3_benchmark.sh --use-latest aws other --compare --report --reparse
 
 # Custom test matrix
 ./warp_s3_benchmark.sh --target aws \
@@ -120,7 +130,7 @@ vi targets/other.env
 ./quick_run_and_report.sh aws
 
 # 4. Open the report
-open results/aws/*/report.html
+open results/aws/*/final_report.html
 ```
 
 #### Regular Performance Monitoring
@@ -128,14 +138,38 @@ open results/aws/*/report.html
 # Quick weekly check
 ./quick_run_and_report.sh aws
 
-# Comprehensive monthly benchmark
+# Comprehensive monthly benchmark (single target)
 ./run_and_report.sh aws
 
-# Compare two systems
-./run_and_report.sh aws other
+# Compare two systems (e.g. other vs aws)
+./warp_s3_benchmark.sh --target aws --target other --compare --report
 ```
 
 #### Troubleshooting
+
+**Raw JSON is valid but summary has errors / comparison is empty**
+
+If `raw/*.json` files contain valid warp output but `summary.json` has `invalid_raw_output` (e.g. from an older parser), re-parse and regenerate the report without re-running warp:
+
+```bash
+# From repo root, with results in results/aws/... and results/other/...
+cd perf-tests
+./warp_s3_benchmark.sh --use-latest aws other --compare --report --reparse
+```
+
+Or re-parse a single run directory and then re-run compare/report yourself:
+
+```bash
+python3 reparse_warp_raw.py results/other/20260208-020124 results/aws/20260206-214236
+# Then merge summaries and run report.py, or run --use-latest --compare --report
+```
+
+**Failing warp tests (capacity, DELETE, remnant objects)**
+
+- **Seaweed / cluster volume full:** Some runs may hit volume capacity; LIST/DELETE or large PUT/GET can fail. The report excludes failed rows (`error_rate >= 1.0`). For a full comparison, increase cluster storage and re-run, or treat the current report as partial (successful ops only).
+- **DELETE leaving remnant objects (AWS S3 too):** Warp DELETE can leave objects (eventual consistency, timeouts, or warp cleanup limits). The benchmark still records throughput/latency for the operations that ran. Optionally clean the bucket between runs or increase delete duration.
+
+**Other**
 ```bash
 # Check prerequisites
 ./validate_setup.sh
@@ -148,6 +182,69 @@ open results/aws/*/report.html
 
 # Check logs in results directory
 cat results/aws/*/raw/*.json
+```
+
+### Running with SeaweedFS locally (macOS / Linux)
+
+Run the benchmark against a local SeaweedFS S3 gateway (no cloud credentials).
+
+**Prerequisites**
+
+- **Docker Desktop** installed and running ([Mac](https://docs.docker.com/desktop/install/mac-install/), [Linux](https://docs.docker.com/engine/install/))
+- `warp` CLI: `brew install minio/stable/warp` (Mac) or [releases](https://github.com/minio/warp/releases)
+
+**One command (configure + start SeaweedFS + run benchmark)**
+
+```bash
+cd perf-tests
+./run_seaweed_local.sh
+```
+
+This will: create `targets/seaweed-local.env` if missing, start SeaweedFS in Docker if not running, then run a short put/get benchmark. Results go to `results/seaweed-local/<timestamp>/`.
+
+**Manual steps (if you prefer)**
+
+```bash
+cd perf-tests
+
+# 1. Start SeaweedFS (creates seaweed-local.env if missing)
+./start_seaweed_local.sh
+
+# 2. Run a short benchmark
+./warp_s3_benchmark.sh --target seaweed-local --duration 30s --sizes 1MiB --concurrency 1,8 --operations put,get
+
+# 3. Optional: compare local SeaweedFS vs AWS (requires targets/aws.env)
+./warp_s3_benchmark.sh --target aws --target seaweed-local --compare --report --duration 1m --sizes 1MiB
+
+# Stop SeaweedFS when done
+./start_seaweed_local.sh --down
+```
+
+SeaweedFS S3 gateway listens on **http://127.0.0.1:8333** with default "Allow All" (any access key/secret in the env is fine).
+
+### Running tests (no S3 required)
+
+Parser and report logic can be tested without credentials or warp:
+
+```bash
+cd perf-tests
+
+# Parser + report tests only (no network, no credentials)
+./run_tests.sh
+
+# Same, plus validate_setup (warp, jq, python, target configs)
+./run_tests.sh --validate
+
+# Same, plus one live warp PUT test (requires targets/aws.env)
+./run_tests.sh --validate --live
+```
+
+Or run the Python tests directly:
+
+```bash
+cd perf-tests
+python3 test_parser_and_report.py
+# Or: pytest test_parser_and_report.py -v
 ```
 
 #### Custom Scenarios
@@ -177,10 +274,14 @@ cat results/aws/*/raw/*.json
 
 | Script | Purpose | Duration | Use Case |
 |--------|---------|----------|----------|
-| `quick_run_and_report.sh` | Quick test + report | 3-5 min | Initial validation, quick checks |
-| `run_and_report.sh` | Full benchmark + report | 30-60 min | Comprehensive testing, comparisons |
-| `warp_s3_benchmark.sh` | Core benchmark engine | Variable | Advanced customization |
+| `quick_run_and_report.sh` | Quick test + report (single target) | 3-5 min | Initial validation, quick checks |
+| `run_and_report.sh` | Full benchmark + report (single target) | 30-60 min | Heavy single-target testing |
+| `warp_s3_benchmark.sh` | Core benchmark + compare + report | Variable | Multi-target comparison (aws vs other) |
+| `reparse_warp_raw.py` | Re-parse raw warp JSON → summary.json | <1 min | Fix invalid_raw_output without re-running warp |
 | `report.py` | Report generator | <1 min | Regenerate reports from existing data |
+| `run_tests.sh` | Parser/report tests (no S3) | <5 sec | CI or local validation |
+| `run_seaweed_local.sh` | One-shot: configure + start SeaweedFS + run benchmark | ~1–2 min | Local testing (requires Docker) |
+| `start_seaweed_local.sh` | Start/stop SeaweedFS in Docker (local S3) | — | Local testing on Mac/Linux |
 | `validate_setup.sh` | Prerequisites check | <1 min | Setup verification |
 | `focused_test.sh` | Fast validation test | 15-20 sec | Quick validation |
 | `simple_test.sh` | Minimal PUT test | 10 sec | Basic connectivity test |

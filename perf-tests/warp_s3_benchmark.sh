@@ -39,9 +39,11 @@ SIZES="${DEFAULT_SIZES}"
 CONCURRENCY="${DEFAULT_CONCURRENCY}"
 ITERATIONS="${DEFAULT_ITERATIONS}"
 OBJECTS="${DEFAULT_OBJECTS}"
+OPERATIONS="put,get,delete,list,mixed"
 DO_COMPARE=false
 DO_REPORT=false
 USE_LATEST=false
+REPARSE=false
 SKIP_CLEANUP=false
 VERBOSE=false
 HEARTBEAT_INTERVAL=30
@@ -185,9 +187,11 @@ Options:
   --concurrency CONC     Comma-separated concurrency levels (default: ${DEFAULT_CONCURRENCY})
   --iterations N         Number of iterations per test (default: ${DEFAULT_ITERATIONS})
   --objects N            Number of objects per test (default: ${DEFAULT_OBJECTS})
+  --operations OPS       Comma-separated operations (default: put,get,delete,list,mixed)
   --compare              Generate comparison after running targets
   --report               Generate final HTML report
   --use-latest           Use latest results for comparison/report
+  --reparse              Re-parse raw/*.json into summary.json before compare (fixes invalid_raw_output)
   --skip-cleanup         Don't clean up test objects
   --verbose              Enable verbose logging
   -h, --help             Show this help
@@ -366,15 +370,16 @@ run_benchmark_suite() {
         CONC_ARRAY[$i]="$(printf '%s' "${CONC_ARRAY[$i]}" | sed -E 's/^\s+|\s+$//g')"
     done
 
-    # Define the operations and export a planned test suite file (human + JSON)
-    # so it's easy to inspect before running
-    local operations=(
-        "put"
-        "get"
-        "delete"
-        "list"
-        "mixed"
-    )
+    # Define the operations from OPERATIONS (comma-separated) and export a planned test suite file
+    local operations=()
+    IFS=',' read -ra _ops <<< "${OPERATIONS:-put,get,delete,list,mixed}"
+    for op in "${_ops[@]}"; do
+        op=$(printf '%s' "$op" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+        [[ -n "$op" ]] && operations+=("$op")
+    done
+    if [[ ${#operations[@]} -eq 0 ]]; then
+        operations=(put get delete list mixed)
+    fi
     mkdir -p "$target_dir"
     local planned_txt="${target_dir}/planned_tests.txt"
     local planned_json="${target_dir}/planned_tests.json"
@@ -691,11 +696,10 @@ parse_warp_output() {
     local new_entry_file
     new_entry_file=$(mktemp "${summary_file}.entry.XXXXXX")
 
-    # If raw output is valid JSON, extract metrics. Otherwise, append a structured error entry
-    if jq -e . "$raw_output" >/dev/null 2>&1; then
-        # Use Python to parse raw JSON and create a summary entry to avoid jq edge cases
-        python3 - "$raw_output" "$target" "$operation" "$size" "$concurrency" "$iteration" "$new_entry_file" <<'PY'
+    # Single Python parser: strips leading non-JSON (warp progress/ANSI), parses warp v2 and legacy formats
+    python3 - "$raw_output" "$target" "$operation" "$size" "$concurrency" "$iteration" "$new_entry_file" <<'PY'
 import json,sys
+
 raw_path=sys.argv[1]
 target=sys.argv[2]
 operation=sys.argv[3]
@@ -720,87 +724,119 @@ entry={
     'errors': 0,
     'error_rate': 0
 }
+
+def extract_json_from_raw(content):
+    """Strip leading non-JSON (ANSI, 'Throughput... Terminating benchmark.', etc.) and return parsed JSON."""
+    start = content.find('{')
+    if start == -1:
+        return None
+    # Warp may emit multiple JSON objects; we want the final report (last object). Try parsing from first {.
+    json_str = content[start:]
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError:
+        pass
+    # If trailing junk, try truncating at the last complete '}' (match depth)
+    depth = 0
+    end = -1
+    for i, c in enumerate(json_str):
+        if c == '{': depth += 1
+        elif c == '}':
+            depth -= 1
+            if depth == 0:
+                end = i
+    if end >= 0:
+        try:
+            return json.loads(json_str[:end+1])
+        except json.JSONDecodeError:
+            pass
+    return None
+
+def parse_warp_v2(data, operation):
+    """Extract summary metrics from warp v2 JSON (total, by_op_type, throughput, requests_by_client)."""
+    total = data.get('total') or {}
+    by_op = data.get('by_op_type') or {}
+    op_block = by_op.get(operation.upper()) if isinstance(by_op, dict) else {}
+    if not op_block:
+        op_block = total
+    thr = (total.get('throughput') or op_block.get('throughput') or {})
+    duration_millis = thr.get('measure_duration_millis') or 0
+    duration_sec = duration_millis / 1000.0 if duration_millis else 0
+    bytes_val = float(thr.get('bytes') or total.get('total_bytes') or 0)
+    total_requests = int(total.get('total_requests') or total.get('total_objects') or 0)
+    total_errors = int(total.get('total_errors') or 0)
+    ops_val = thr.get('ops') or thr.get('objects')
+    if ops_val is None and total_requests and duration_sec:
+        ops_val = total_requests
+    ops_val = float(ops_val or 0)
+    throughput_mbps = (bytes_val / (1024.0 * 1024.0)) / duration_sec if duration_sec else 0
+    ops_per_sec = ops_val / duration_sec if duration_sec else 0
+    error_rate = (total_errors / total_requests) if total_requests else 0
+    # Latency from first client's first segment (first_byte or single_sized_requests)
+    avg_ms = p50_ms = p90_ms = p99_ms = 0
+    req_by_client = op_block.get('requests_by_client') or total.get('requests_by_client') or {}
+    for client_name, segments in (req_by_client.items() if isinstance(req_by_client, dict) else []):
+        for seg in (segments if isinstance(segments, list) else [segments]):
+            s = seg.get('single_sized_requests') or {}
+            fb = s.get('first_byte') or {}
+            if fb:
+                avg_ms = float(fb.get('average_millis') or 0)
+                p50_ms = float(fb.get('median_millis') or 0)
+                p90_ms = float(fb.get('p90_millis') or 0)
+                p99_ms = float(fb.get('p99_millis') or 0)
+                break
+            dur_avg = s.get('dur_avg_millis')
+            if dur_avg is not None:
+                avg_ms = float(dur_avg)
+                p99_ms = float(s.get('dur_99_millis') or 0)
+                p90_ms = float(s.get('dur_90_millis') or 0)
+                p50_ms = float(s.get('dur_median_millis') or avg_ms)
+                break
+        break
+    return {
+        'throughput_mbps': throughput_mbps,
+        'ops_per_sec': ops_per_sec,
+        'avg_latency_ms': avg_ms,
+        'p50_latency_ms': p50_ms,
+        'p90_latency_ms': p90_ms,
+        'p99_latency_ms': p99_ms,
+        'total_operations': total_requests,
+        'errors': total_errors,
+        'error_rate': error_rate,
+    }
+
 try:
-    with open(raw_path,'r',encoding='utf-8',errors='replace') as f:
-        data=json.load(f)
-    # raw can be an object or list
-    r0 = data[0] if isinstance(data,list) and len(data)>0 else data
-    entry['throughput_mbps']=float(r0.get('throughput_mb',0) or 0)
-    entry['ops_per_sec']=float(r0.get('ops_per_sec',0) or 0)
-    entry['avg_latency_ms']=float(r0.get('latency_avg_ms',0) or 0)
-    entry['p50_latency_ms']=float(r0.get('latency_p50_ms',0) or 0)
-    entry['p90_latency_ms']=float(r0.get('latency_p90_ms',0) or 0)
-    entry['p99_latency_ms']=float(r0.get('latency_p99_ms',0) or 0)
-    entry['total_operations']=int(r0.get('operations',0) or 0)
-    entry['errors']=int(r0.get('errors',0) or 0)
-    entry['error_rate']=float(r0.get('error_rate',0) or 0)
+    with open(raw_path, 'r', encoding='utf-8', errors='replace') as f:
+        content = f.read()
+    data = extract_json_from_raw(content)
+    if not data:
+        raise ValueError('No JSON object found in raw output (leading non-JSON or invalid format)')
+    # Warp v2 format: has "total" and often "v": 2
+    if isinstance(data, dict) and data.get('total') is not None:
+        parsed = parse_warp_v2(data, operation)
+        entry.update(parsed)
+    else:
+        # Legacy flat format or list of objects
+        r0 = data[0] if isinstance(data, list) and len(data) > 0 else data
+        if not isinstance(r0, dict):
+            raise ValueError('Expected dict or list of dicts')
+        entry['throughput_mbps'] = float(r0.get('throughput_mb', 0) or 0)
+        entry['ops_per_sec'] = float(r0.get('ops_per_sec', 0) or 0)
+        entry['avg_latency_ms'] = float(r0.get('latency_avg_ms', 0) or 0)
+        entry['p50_latency_ms'] = float(r0.get('latency_p50_ms', 0) or 0)
+        entry['p90_latency_ms'] = float(r0.get('latency_p90_ms', 0) or 0)
+        entry['p99_latency_ms'] = float(r0.get('latency_p99_ms', 0) or 0)
+        entry['total_operations'] = int(r0.get('operations', 0) or 0)
+        entry['errors'] = int(r0.get('errors', 0) or 0)
+        entry['error_rate'] = float(r0.get('error_rate', 0) or 0)
 except Exception as e:
-    entry['error']='parse_error'
-    entry['error_msg']=str(e)
+    entry['error'] = 'parse_error'
+    entry['error_msg'] = str(e)
+    entry['error_rate'] = 1.0
 
-with open(out_path,'w',encoding='utf-8') as f:
-    json.dump(entry,f)
-
+with open(out_path, 'w', encoding='utf-8') as f:
+    json.dump(entry, f)
 PY
-    else
-        # Mask credentials for safe display in the error entry
-        local ak="${S3_ACCESS_KEY:-}"
-        local sk="${S3_SECRET_KEY:-}"
-        local ak_masked
-        local sk_masked
-        ak_masked=$(printf '%s' "$ak" | sed -E 's/(.{4}).*(.{4})/\1****\2/')
-        sk_masked=$(printf '%s' "$sk" | sed -E 's/(.{4}).*(.{4})/\1****\2/')
-
-        # Capture the tail of the raw output and mask any literal credentials safely using python
-        local raw_tail
-        raw_tail=$(tail -n 200 "$raw_output" 2>/dev/null | AK="$ak" SK="$sk" AKM="$ak_masked" SKM="$sk_masked" python3 - <<'PY'
-import os,sys
-ak=os.environ.get('AK','')
-sk=os.environ.get('SK','')
-akm=os.environ.get('AKM','')
-skm=os.environ.get('SKM','')
-data=sys.stdin.read()
-if ak:
-    data=data.replace(ak, akm)
-if sk:
-    data=data.replace(sk, skm)
-sys.stdout.write(data)
-PY
-)
-
-        # Use base64 encoding for the raw tail to avoid JSON encoding issues
-        local raw_tail_b64
-        raw_tail_b64=$(printf '%s' "$raw_tail" | base64 | tr -d '\n')
-
-                # Write a safe fallback JSON entry using python to ensure valid JSON
-                python3 - "$target" "$operation" "$size" "$concurrency" "$iteration" "$raw_tail_b64" "$new_entry_file" <<'PY'
-import json,sys
-target=sys.argv[1]
-operation=sys.argv[2]
-size=sys.argv[3]
-concurrency=int(sys.argv[4])
-iteration=int(sys.argv[5])
-raw_tail_b64=sys.argv[6]
-out_path=sys.argv[7]
-entry={
-    'target': target,
-    'operation': operation,
-    'object_size': size,
-    'concurrency': concurrency,
-    'iteration': iteration,
-    'throughput_mbps': 0,
-    'ops_per_sec': 0,
-    'avg_latency_ms': 0,
-    'total_operations': 0,
-    'errors': 0,
-    'error_rate': 1.0,
-    'error': 'invalid_raw_output',
-    'raw_tail_b64': raw_tail_b64
-}
-with open(out_path,'w',encoding='utf-8') as f:
-        json.dump(entry,f)
-PY
-    fi
 
     # If jq/python failed to write a new entry (empty file), write a minimal fallback entry
     if [[ ! -s "$new_entry_file" ]]; then
@@ -984,6 +1020,16 @@ generate_comparison() {
         target_dirs+=("$latest_dir")
         log "Using results from: $latest_dir"
     done
+
+    # Optionally re-parse raw warp output into summary.json (fixes invalid_raw_output from older parser)
+    if [[ "${REPARSE:-false}" == "true" ]]; then
+        log "Re-parsing raw output for each target..."
+        for run_dir in "${target_dirs[@]}"; do
+            if [[ -d "$run_dir/raw" ]]; then
+                python3 "${SCRIPT_DIR}/reparse_warp_raw.py" "$run_dir" && log "Reparsed: $run_dir" || warn "Reparse had issues: $run_dir"
+            fi
+        done
+    fi
     
     # Generate comparison
     local timestamp="$(date '+%Y%m%d-%H%M%S')"
@@ -1061,6 +1107,10 @@ parse_arguments() {
                 OBJECTS="$2"
                 shift 2
                 ;;
+            --operations)
+                OPERATIONS="$2"
+                shift 2
+                ;;
             --compare)
                 DO_COMPARE=true
                 shift
@@ -1076,6 +1126,10 @@ parse_arguments() {
                 ;;
             --use-latest)
                 USE_LATEST=true
+                shift
+                ;;
+            --reparse)
+                REPARSE=true
                 shift
                 ;;
             --skip-cleanup)
