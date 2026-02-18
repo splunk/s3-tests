@@ -264,6 +264,74 @@ The following table is the reference for Phase 8 multi-site testing. **Basic set
 
 ---
 
+## Collecting and Submitting Results
+
+The `results/` directory provides a structured kit so every partner submits results in the **same format**, making comparison and review straightforward.
+
+There are two ways to collect results — both are equally valid:
+
+| Method | When to use |
+|--------|-------------|
+| **Script-assisted** (recommended) | Use `check_results.py` and `collect_results.sh` to verify completeness and package everything automatically. |
+| **Manual** | Fill in the `results/phase*/results.md` templates and drop attachment files into each phase folder by hand, then zip or tar the `results/` folder yourself before sending. The folder structure and file naming must match the layout described in [results/README.md](results/README.md). |
+
+
+### One-time setup
+
+1. Clone this repo onto the machine you will use for testing.
+2. Fill in **`results/00-env-info.md`** — your company name, Splunk version, storage vendor/version, and deployment topology.  This file is shared across all phases.
+
+### Per-phase workflow
+
+| Phase | What to do |
+|-------|-----------|
+| **Phase 1** | Run `./s3tests/run_core_s3_tests.sh` (see [s3tests/README.rst](s3tests/README.rst)). The script auto-saves a JUnit XML and full pytest log to `s3tests/reports/`. |
+| **Phases 2–8** | After completing each phase, open `results/phase<N>-*/results.md` and fill in the tables. Add screenshots / log excerpts to the same folder. |
+
+The `results/` directory contains a pre-built template for every phase:
+
+```
+results/
+  00-env-info.md              ← fill in once (versions, topology, contact)
+  check_results.py            ← run at any time to check completeness
+  phase1-s3-compat/results.md
+  phase2-deployment/results.md
+  phase3-functional/results.md
+  phase4-migration/results.md
+  phase5-remote-store-perf/results.md
+  phase6-search-perf/results.md
+  phase7-scale/results.md
+  phase8-multisite/results.md
+```
+
+### Check completeness at any time
+
+Run from the **repo root**:
+
+```bash
+python results/check_results.py
+```
+
+Prints a per-phase status (COMPLETE / PARTIAL / NOT STARTED), lists every blank field, unanswered yes/no, and missing attachment, and gives a final READY TO SUBMIT / NEARLY READY / NOT READY verdict.
+
+### Package and send results
+
+Run from the **repo root** when ready to submit (or for a checkpoint review):
+
+```bash
+./collect_results.sh
+```
+
+This script:
+- Auto-captures OS, Python, and git info → `results/00-env-info-auto.txt`
+- Copies the latest Phase 1 JUnit XML and pytest log → `results/phase1-s3-compat/`
+- Warns about any phases that still have unfilled fields
+- Creates **`results-bundle-<YYYYMMDD-HHMMSS>.tar.gz`** in the repo root
+
+Send that `.tar.gz` to your Splunk partner team contact.
+
+---
+
 ## Expected Test Outcomes
 
 Deliverables to share with Splunk:
@@ -286,6 +354,8 @@ Deliverables to share with Splunk:
 | Resource | Location |
 |---------|----------|
 | **S3 API compatibility tests** (Phase 1) | [s3tests/README.rst](s3tests/README.rst). All assets in **s3tests/** (script, config samples, setup, tox, requirements). |
+| **Results templates** (all phases) | [results/](results/) — one `results.md` per phase; run `python results/check_results.py` to check completeness |
+| **Results packaging script** | [`collect_results.sh`](collect_results.sh) — bundles all results into a `.tar.gz` |
 | **Splunk SmartStore system requirements** | [docs.splunk.com](https://docs.splunk.com/Documentation/Splunk/latest/Indexer/SmartStoresystemrequirements) |
 | **Migrate to SmartStore** | [docs.splunk.com](https://docs.splunk.com/Documentation/Splunk/latest/Indexer/MigratetoSmartStore) |
 | **Multisite SmartStore** | [docs.splunk.com](https://docs.splunk.com/Documentation/Splunk/latest/Indexer/MultisiteSmartStore) |
