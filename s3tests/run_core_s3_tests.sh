@@ -1,37 +1,44 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage:
-#   source .venv/bin/activate
-#   ./run_core_s3_tests.sh
+# Run from repo root or from s3tests/. Config and reports live in s3tests/.
+# Usage: ./s3tests/run_core_s3_tests.sh   (from repo root)
 
-S3TEST_CONF=${S3TEST_CONF:-splunk.conf}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+S3TEST_CONF=${S3TEST_CONF:-$SCRIPT_DIR/splunk.conf}
 PYTEST_TARGET=${PYTEST_TARGET:-s3tests/functional}
-REPORT_DIR=${REPORT_DIR:-reports}
+REPORT_DIR=${REPORT_DIR:-$SCRIPT_DIR/reports}
 mkdir -p "$REPORT_DIR"
 
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 JUNIT_FILE="$REPORT_DIR/junit-${TIMESTAMP}.xml"
 LOG_FILE="$REPORT_DIR/pytest-${TIMESTAMP}.log"
 
-# Default pytest args
-PYTEST_ARGS=( -q )
+cd "$REPO_ROOT"
 
-# Marker exclusions: skip IAM/ACL/encryption/STS/webidentity and other non-core marks
+# Configurable environment variables (in addition to S3TEST_CONF, REPORT_DIR above):
+# - PYTEST_TARGET: path to tests (default: s3tests/functional)
+# - PYTEST_ARGS: optional; if set (as a string), used as base pytest args instead of -q
+
+# If caller provided PYTEST_ARGS env var, use it (as a string); otherwise start with sane defaults.
+if [ -z "${PYTEST_ARGS+x}" ]; then
+  PYTEST_ARGS=( -q )
+else
+  read -r -a PYTEST_ARGS <<< "$PYTEST_ARGS"
+fi
+
 PYTEST_MARK_EXCLUDE="not (iam_account or iam_cross_account or iam_role or iam_user or iam_tenant or \
 bucket_policy or user_policy or role_policy or session_policy or group_policy or auth_common or \
 object_lock or sse_s3 or encryption or bucket_encryption or cors or acl or acl_required or \
 webidentity or sts or iam or s3select or checksum or logging or policy or fails_on_aws)"
 
-# Test-name (-k) exclusions requested earlier
 PYTEST_KEY_EXCLUDE="not (test_lifecycle_expiration_header_put or test_lifecycle_expiration_header_head or \
 test_lifecycle_expiration_header_tags_head or test_object_checksum_sha256 or \
 test_versioning_concurrent_multi_object_delete)"
 
-# Build base pytest args
 PYTEST_ARGS+=( "$PYTEST_TARGET" -m "$PYTEST_MARK_EXCLUDE" -k "$PYTEST_KEY_EXCLUDE" --junitxml "$JUNIT_FILE" )
 
-# Module-level deselects
 DESELECT_MODULES=(
   "s3tests/functional/test_iam.py"
   "s3tests/functional/test_sts.py"
@@ -39,7 +46,7 @@ DESELECT_MODULES=(
   "s3tests/functional/test_headers.py"
 )
 
-# Add failing/unsupported tests (from your lists) to per-test deselect
+# Add failing/unsupported tests to per-test deselect (from original 310-line script)
 DESELECT_TESTS=(
   # bucket listing / encoding / continuation token
   "s3tests/functional/test_s3.py::test_bucket_listv2_encoding_basic"
@@ -50,7 +57,6 @@ DESELECT_TESTS=(
   "s3tests/functional/test_s3.py::test_bucket_list_return_data"
   "s3tests/functional/test_s3.py::test_bucket_list_return_data_versioning"
   "s3tests/functional/test_s3.py::test_bucket_listv2_objects_anonymous"
-
   # CORS / presigned / ACL related
   "s3tests/functional/test_s3.py::test_bucket_concurrent_set_canned_acl"
   "s3tests/functional/test_s3.py::test_expected_bucket_owner"
@@ -60,7 +66,6 @@ DESELECT_TESTS=(
   "s3tests/functional/test_s3.py::test_cors_presigned_put_object_tenant_v2"
   "s3tests/functional/test_s3.py::test_cors_presigned_put_object_tenant"
   "s3tests/functional/test_s3.py::test_cors_presigned_put_object_tenant_with_acl"
-
   # multipart / atomic / versioning / tags / object-lock
   "s3tests/functional/test_s3.py::test_atomic_dual_write_8mb"
   "s3tests/functional/test_s3.py::test_multipart_resend_first_finishes_last"
@@ -68,7 +73,6 @@ DESELECT_TESTS=(
   "s3tests/functional/test_s3.py::test_put_excess_tags"
   "s3tests/functional/test_s3.py::test_object_lock_put_obj_lock_invalid_days"
   "s3tests/functional/test_s3.py::test_object_lock_put_obj_lock_invalid_years"
-
   # policies / public ACL / block-public tests
   "s3tests/functional/test_s3.py::test_get_bucket_policy_status"
   "s3tests/functional/test_s3.py::test_get_public_acl_bucket_policy_status"
@@ -81,97 +85,17 @@ DESELECT_TESTS=(
   "s3tests/functional/test_s3.py::test_block_public_restrict_public_buckets"
   "s3tests/functional/test_s3.py::test_ignore_public_acls"
   "s3tests/functional/test_s3.py::test_multipart_upload_on_a_bucket_with_policy"
-
   # logging / bucket logging tests
   "s3tests/functional/test_s3.py::test_put_bucket_logging"
   "s3tests/functional/test_s3.py::test_put_bucket_logging_errors"
   "s3tests/functional/test_s3.py::test_bucket_logging_owner"
   "s3tests/functional/test_s3.py::test_put_bucket_logging_permissions"
   "s3tests/functional/test_s3.py::test_put_bucket_logging_policy_wildcard"
-
   # multipart attribute helpers / listing attributes
   "s3tests/functional/test_s3.py::test_get_multipart_object_attributes"
   "s3tests/functional/test_s3.py::test_get_paginated_multipart_object_attributes"
   "s3tests/functional/test_s3.py::test_get_single_multipart_object_attributes"
-)
-
-# Append module deselects
-for f in "${DESELECT_MODULES[@]}"; do
-  PYTEST_ARGS+=( --deselect "$f" )
-done
-
-# Append individual test deselects
-for t in "${DESELECT_TESTS[@]}"; do
-  PYTEST_ARGS+=( --deselect "$t" )
-done
-
-echo "Running pytest with exclusions..."
-echo "S3TEST_CONF=$S3TEST_CONF pytest ${PYTEST_ARGS[*]}"
-
-# Run pytest and tee output to a log file; preserve exit status
-S3TEST_CONF=$S3TEST_CONF pytest "${PYTEST_ARGS[@]}" 2>&1 | tee "$LOG_FILE"
-EXIT_STATUS=${PIPESTATUS[0]}
-
-echo "pytest finished with exit status ${EXIT_STATUS}"
-echo "JUnit report: ${JUNIT_FILE}"
-echo "Raw log: ${LOG_FILE}"
-
-exit ${EXIT_STATUS}
-
-#!/usr/bin/env bash
-set -euo pipefail
-
-# Run core S3 operation tests only. Excludes ACL/IAM/STS/webidentity/encryption/S3Select/logging/checksum related tests
-
-#   source .venv/bin/activate
-#   ./run_core_s3_tests.sh
-
-# Configurable environment variables:
-# - S3TEST_CONF : path to config (default: splunk.conf)
-# - PYTEST_TARGET: path to tests (default: s3tests/functional)
-# - REPORT_DIR: directory to write junit/log reports (default: reports)
-
-S3TEST_CONF=${S3TEST_CONF:-splunk.conf}
-PYTEST_TARGET=${PYTEST_TARGET:-s3tests/functional}
-REPORT_DIR=${REPORT_DIR:-reports}
-mkdir -p "$REPORT_DIR"
-
-TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-JUNIT_FILE="$REPORT_DIR/junit-${TIMESTAMP}.xml"
-LOG_FILE="$REPORT_DIR/pytest-${TIMESTAMP}.log"
-
-# If caller provided PYTEST_ARGS env var, use it (as a string); otherwise start with sane defaults.
-if [ -z "${PYTEST_ARGS+x}" ]; then
-  PYTEST_ARGS=( -q )
-else
-  # split string into array
-  read -r -a PYTEST_ARGS <<< "$PYTEST_ARGS"
-fi
-
-# Marker exclusions: skip IAM/ACL/encryption/STS/webidentity and other non-core marks
-PYTEST_MARK_EXCLUDE="not (iam_account or iam_cross_account or iam_role or iam_user or iam_tenant or \
-bucket_policy or user_policy or role_policy or session_policy or group_policy or auth_common or \
-object_lock or sse_s3 or encryption or bucket_encryption or cors or acl or acl_required or \
-webidentity or sts or iam or s3select or checksum or logging or policy or fails_on_aws)"
-
-# Test-name (-k) exclusions requested
-PYTEST_KEY_EXCLUDE="not (test_lifecycle_expiration_header_put or test_lifecycle_expiration_header_head or \
-test_lifecycle_expiration_header_tags_head or test_object_checksum_sha256 or \
-test_versioning_concurrent_multi_object_delete)"
-
-# Build base pytest args
-PYTEST_ARGS+=( "$PYTEST_TARGET" -m "$PYTEST_MARK_EXCLUDE" -k "$PYTEST_KEY_EXCLUDE" --junitxml "$JUNIT_FILE" )
-
-# Files to always deselect (module-level)
-DESELECT_MODULES=(
-  "s3tests/functional/test_iam.py"
-  "s3tests/functional/test_sts.py"
-  "s3tests/functional/test_s3select.py"
-  "s3tests/functional/test_headers.py"
-)
-
-
-DESELECT_TESTS=(
+  # raw / anon / ACL / bucket naming / multipart / CORS / conditional / ownership (from original long list)
   "s3tests/functional/test_s3.py::test_put_object_ifnonmatch_failed"
   "s3tests/functional/test_s3.py::test_object_raw_get_bucket_gone"
   "s3tests/functional/test_s3.py::test_object_raw_get_object_gone"
@@ -255,12 +179,9 @@ DESELECT_TESTS=(
   "s3tests/functional/test_s3.py::test_put_bucket_ownership_object_writer"
 )
 
-# Append module deselects
 for f in "${DESELECT_MODULES[@]}"; do
   PYTEST_ARGS+=( --deselect "$f" )
 done
-
-# Append individual test deselects
 for t in "${DESELECT_TESTS[@]}"; do
   PYTEST_ARGS+=( --deselect "$t" )
 done
@@ -268,8 +189,7 @@ done
 echo "Running pytest with exclusions..."
 echo "S3TEST_CONF=$S3TEST_CONF pytest ${PYTEST_ARGS[*]}"
 
-# Run pytest and tee output to a log file; preserve exit status
-S3TEST_CONF=$S3TEST_CONF pytest "${PYTEST_ARGS[@]}" 2>&1 | tee "$LOG_FILE"
+S3TEST_CONF="$S3TEST_CONF" pytest "${PYTEST_ARGS[@]}" 2>&1 | tee "$LOG_FILE"
 EXIT_STATUS=${PIPESTATUS[0]}
 
 echo "pytest finished with exit status ${EXIT_STATUS}"
@@ -277,35 +197,3 @@ echo "JUnit report: ${JUNIT_FILE}"
 echo "Raw log: ${LOG_FILE}"
 
 exit ${EXIT_STATUS}
-#!/usr/bin/env bash
-# Run core S3 operation tests only. Excludes ACL/IAM/STS/webidentity/encryption/S3Select/logging/checksum related tests.
-# Usage:
-#   source .venv/bin/activate
-#   ./run_core_s3_tests.sh
-
-S3TEST_CONF=splunk.conf
-PYTEST_ARGS=(
-  -q
-  s3tests/functional
-  -m "not (iam_account or iam_cross_account or iam_role or iam_tenant or iam_user or \
-bucket_policy or user_policy or role_policy or session_policy or group_policy or auth_common or \
-object_lock or sse_s3 or encryption or bucket_encryption or cors or acl or acl_required or \
-webidentity or sts or iam or s3select or checksum or logging or policy)"
-)
-
-# Modules we definitely don't want run as whole files (fast deselect)
-DESELECT=(
-  "s3tests/functional/test_iam.py"
-  "s3tests/functional/test_sts.py"
-  "s3tests/functional/test_s3select.py"
-  "s3tests/functional/test_headers.py"
-)
-
-# Build deselect args
-for f in "${DESELECT[@]}"; do
-  PYTEST_ARGS+=( --deselect "$f" )
-done
-
-echo "Running pytest with exclusions..."
-echo "S3TEST_CONF=$S3TEST_CONF pytest ${PYTEST_ARGS[*]}"
-S3TEST_CONF=$S3TEST_CONF pytest "${PYTEST_ARGS[@]}"

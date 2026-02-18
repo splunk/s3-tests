@@ -1,10 +1,13 @@
 #!/usr/bin/python
-from setuptools import setup, find_packages
+from setuptools import setup
 
+# When installing from s3tests/ (e.g. pip install -e ./s3tests from repo root),
+# the s3tests package is this directory.
 setup(
     name='s3tests',
     version='0.0.1',
-    packages=find_packages(),
+    package_dir={'s3tests': '.'},
+    packages=['s3tests', 's3tests.functional'],
 
     author='Tommi Virtanen',
     author_email='tommi.virtanen@dreamhost.com',
