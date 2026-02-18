@@ -8,7 +8,6 @@ that exposes an S3-like API. The tests use the Boto2 and Boto3 libraries.
 
 **Paths:** All S3 test assets live in **s3tests/** (e.g. ``s3tests/run_core_s3_tests.sh``,
 ``s3tests/s3tests.conf.SAMPLE``, ``s3tests/splunk.conf``, ``s3tests/reports/``).
-Run all commands from the **repository root**.
 
 The tests are executed with ``pytest``. Prefer creating a local Python
 virtual environment at repo root and installing test tools there. Example::
