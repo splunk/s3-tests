@@ -21,7 +21,7 @@ Splunk SmartStore uses S3 APIs to connect to remote object storage. Only a **sub
 | Step | Action |
 |------|--------|
 | **a** | Use the S3 compatibility checking tool in this repo: everything lives in **s3tests/** (tests, **run_core_s3_tests.sh**, config samples, setup, tox, requirements) — see [splunk/s3-tests](https://github.com/splunk/s3-tests). |
-| **b** | Follow **[S3-TESTS-README.md](S3-TESTS-README.md)**: create a venv at repo root, copy `s3tests/splunk.conf` from the sample, and run `./s3tests/run_core_s3_tests.sh` from the repo root. |
+| **b** | Follow **[s3tests/README.rst](s3tests/README.rst)**: create a venv at repo root, copy `s3tests/splunk.conf` from the sample, and run `./s3tests/run_core_s3_tests.sh` from the repo root. |
 | **c** | Capture the results (logs) from the S3 API compatibility tests and **share with the Splunk partner team (required)**. |
 
 ---
@@ -285,7 +285,7 @@ Deliverables to share with Splunk:
 
 | Resource | Location |
 |---------|----------|
-| **S3 API compatibility tests** (Phase 1) | [S3-TESTS-README.md](S3-TESTS-README.md). All assets in **s3tests/** (script, config samples, setup, tox, requirements). |
+| **S3 API compatibility tests** (Phase 1) | [s3tests/README.rst](s3tests/README.rst). All assets in **s3tests/** (script, config samples, setup, tox, requirements). |
 | **Splunk SmartStore system requirements** | [docs.splunk.com](https://docs.splunk.com/Documentation/Splunk/latest/Indexer/SmartStoresystemrequirements) |
 | **Migrate to SmartStore** | [docs.splunk.com](https://docs.splunk.com/Documentation/Splunk/latest/Indexer/MigratetoSmartStore) |
 | **Multisite SmartStore** | [docs.splunk.com](https://docs.splunk.com/Documentation/Splunk/latest/Indexer/MultisiteSmartStore) |
