@@ -9,7 +9,7 @@ This document outlines the testing process for validating Splunk’s SmartStore 
 
 - **Required skills:** Strong knowledge of Splunk storage architecture; ability to deploy and administer advanced Splunk Enterprise features (including multi-site clustering); general knowledge of searching and indexing in Splunk Enterprise.
 - **Pre-read:** Many details must be understood before starting. At a high level, this plan guides you to: connect Splunk to your remote object storage; deploy Splunk in a distributed/multi-site configuration; enable collection of 1 TB of test data; complete functional and baseline measurements of search/index performance.
-- **Deliverables:** All measurements and outcomes must be shared with Splunk. Performance tests are **informational only** and do not represent real-world workloads.
+- **Deliverables:** All measurements and outcomes must be shared with Splunk. Performance tests are **informational only** and do not represent real-world workloads. Shared results must follow the **formats and section order** in this repository’s results templates ([Collecting and Submitting Results](#collecting-and-submitting-results); [results/README.md](results/README.md)).
 - **Questions:** Review the [Expected Test Outcomes](#expected-test-outcomes) at the end, and reach out to the Splunk partner team for any clarifications.
 
 ---
@@ -265,6 +265,8 @@ The following table is the reference for Phase 8 multi-site testing. **Basic set
 ---
 
 ## Collecting and Submitting Results
+
+**Disclaimer:** Results you share with Splunk must follow the output formats, folder layout, attachment types, and naming conventions defined in this repository—see [results/README.md](results/README.md), the per-phase `results/phase*-*/results.md` templates, and `results/00-env-info.md`. **Preserve each template’s section order top to bottom:** complete setup, configuration, and metric **tables** (and any narrative fields) in the sequence the Markdown shows—typically before **Attached Files**—then add MC screenshots, Job Inspector exports, and log excerpts in the order the checklist lists them. Do not put result screens or attachments ahead of the preceding tables. Submissions that do not match these specifications may be incomplete for review or comparison.
 
 The `results/` directory provides a structured kit so every partner submits results in the **same format**, making comparison and review straightforward.
 
