@@ -27,16 +27,6 @@
 | Average download throughput | | |
 | Total buckets downloaded | | |
 
-## Cache Performance
-
-| Cache level | Search latency (avg, seconds) | Notes |
-|-------------|-------------------------------|-------|
-| 100% in cache | | |
-| 75% in cache | | |
-| 50% in cache | | |
-| 25% in cache | | |
-| 0% in cache (fully evicted) | | |
-
 ## Storage Vendor Metrics
 
 | Metric | Value |
@@ -52,7 +42,6 @@ Drop files into this folder (`results/phase5-remote-store-perf/`):
 
 - [ ] MC SmartStore Activity screenshot — upload panel (`.png` / `.jpg` / `.pdf`)
 - [ ] MC SmartStore Activity screenshot — download panel (`.png` / `.jpg` / `.pdf`)
-- [ ] Job Inspector output for search latency (`.json` / `.png` / `.pdf`)
 - [ ] Storage vendor performance dashboard export (`.png` / `.jpg` / `.pdf` / `.csv`)
 
 ## Notes

@@ -18,7 +18,7 @@ results/
   phase4-migration/
     results.md                   ← Migration timeline, upload throughput, MC progress
   phase5-remote-store-perf/
-    results.md                   ← Upload/download throughput, search latency by cache %
+    results.md                   ← Upload/download throughput
   phase6-search-perf/
     results.md                   ← Search latency (cache vs no cache, 25/50/75/100%)
   phase7-scale/
@@ -83,7 +83,7 @@ Send that `.tar.gz` to your Splunk partner team contact.
 | Phase 2 | Manual | MC screenshot (`.png`/`.jpg`/`.pdf`), CLI output (`.txt`/`.log`) |
 | Phase 3 | Manual | MC Bucket Activity screenshot, CLI output |
 | Phase 4 | Manual | MC Migration Progress screenshot, `splunkd.log` excerpt |
-| Phase 5 | Manual | MC charts screenshot, Job Inspector export (`.json`/`.png`/`.pdf`), storage vendor export (`.csv`) |
+| Phase 5 | Manual | MC charts screenshot, storage vendor export (`.csv`) |
 | Phase 6 | Manual | Job Inspector output, MC charts screenshot |
 | Phase 7 | Manual | Same as Phase 5/6 at scale |
 | Phase 8 | Manual | MC screenshots per scenario, `splunkd.log`, storage replication dashboard export |
